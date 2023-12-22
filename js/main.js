@@ -1,39 +1,14 @@
 var socket = new WebSocket('ws://127.0.0.1:9501');
 
-socket.onopen = function(){
+socket.onopen = function () {
     console.log("User connected");
-}
-
-setCookie = (cname, cvalue, exdays) => {
-    let d = new Date();
-    d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
-    let expires = "expires=" + d.toUTCString();
-    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
-};  
-
-getCookie = cname => {
-    let name = cname + "=";
-    let decodedCookie = decodeURIComponent(document.cookie);
-    let ca = decodedCookie.split(";");
-    for (let i = 0; i < ca.length; i++) {
-      let c = ca[i];
-      while (c.charAt(0) == " ") {
-        c = c.substring(1);
-      }
-      if (c.indexOf(name) == 0) {
-        return c.substring(name.length, c.length);
-      }
-    }
-    return "";
 };
 
-let Name = getCookie("name");
-
-if (!Name) {
-    let timestamp = new Date().getTime();
-    Name = "anonymous" + timestamp;
-    setCookie("name", "anonymous" + timestamp, 60);
+function getRandomNumber() {
+    return Math.floor(Math.random() * 100);
 }
+
+let Name = "anonymous" + getRandomNumber();
 
 function sendMessage() {
     let messageElem = document.getElementById("message");
@@ -50,29 +25,35 @@ function sendMessage() {
 
     messageElem.value = "";
 
-    messageParse(Name, textMessage);
-;}
-
-socket.onmessage = function(event){
-    let data = JSON.parse(event.data);
-    messageParse(data.sender, data.text);
+    messageParse(Name, msg.date, textMessage);
 }
 
-function messageParse(sender, msg) {
+socket.onmessage = function (event) {
+    let data = JSON.parse(event.data);
+    messageParse(data.sender, data.date, data.text);
+}
+
+function messageParse(sender, timestamp, msg) {
     let html = "";
+    let timeString = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     if (sender !== Name) {
-      html = `<li class="message left appeared">
-          <div class="avatar"></div>
-          <div class="text_wrapper">
-          <div class="text">${msg}</div>
-        </div></li>`;
+        html = `<li class="message left appeared">
+            <div class="avatar"></div>
+            <div class="text_wrapper">
+                <div class="sender_info">${sender}</div>
+                <div class="text">${msg}</div>
+                <div class="timestamp_info">${timeString}</div>
+            </div></li>`;
     } else {
-      html = `<li class="message right appeared">
-          <div class="avatar"></div>
-          <div class="text_wrapper">
-          <div class="text">${msg}</div>
-        </div></li>`;
+        html = `<li class="message right appeared">
+            <div class="avatar"></div>
+            <div class="text_wrapper">
+                <div class="sender_info">${sender}</div>
+                <div class="text">${msg}</div>
+                <div class="timestamp_info">${timeString}</div>
+            </div></li>`;
     }
-  
+
     document.getElementById("messageBox").innerHTML += html;
 }
